@@ -1,0 +1,10 @@
+- Source code: [GitHub repository]  https://github.com/tanujkhandelwal007-bit/live-polling
+
+
+- Local frontend: `http://localhost:5173`
+
+
+- Local API: `http://localhost:8080`
+
+
+- Live Deployed Link- https://live-polling007.onrender.com/
