@@ -1,7 +1,11 @@
+
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const API_URL = "http://localhost:8080";
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+const WS_URL = API_URL.replace(/^http/, "ws");
 
 function App() {
   // -------------------------
@@ -115,17 +119,17 @@ function App() {
 
       const body = isRegister
         ? {
-          name: name.trim(),
-          email: email.trim(),
-          password,
-        }
+            name: name.trim(),
+            email: email.trim(),
+            password,
+          }
         : {
-          email: email.trim(),
-          password,
-        };
+            email: email.trim(),
+            password,
+          };
 
       const response = await fetch(
-        `${API_URL}${endpoint}`,
+        `${ API_URL }${ endpoint } `,
         {
           method: "POST",
           headers: {
@@ -211,508 +215,293 @@ function App() {
 
     try {
       const response = await fetch(
-        `${API_URL}/polls`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        `${ API_URL }/polls`,
+{
+  method: "POST",
+    headers: {
+    "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            question: cleanedQuestion,
-            options: cleanedOptions,
-          }),
+  body: JSON.stringify({
+    question: cleanedQuestion,
+    options: cleanedOptions,
+  }),
         }
       );
 
-      const data = await response.json();
+const data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          setToken("");
-          setMessage(
-            "Session expired. Please login again."
-          );
-          return;
-        }
+if (!response.ok) {
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    setToken("");
+    setMessage(
+      "Session expired. Please login again."
+    );
+    return;
+  }
 
-        setMessage(
-          data.error || "Failed to create poll"
-        );
+  setMessage(
+    data.error || "Failed to create poll"
+  );
 
-        return;
-      }
+  return;
+}
 
-      window.location.href =
-        `/poll/${data.poll.id}`;
+window.location.href =
+  `/poll/${data.poll.id}`;
     } catch (error) {
-      setMessage("Server connection failed");
-    } finally {
+  setMessage("Server connection failed");
+} finally {
+  setLoading(false);
+}
+  };
+
+// -------------------------
+// Add / Remove / Update Option
+// -------------------------
+
+const addOption = () => {
+  setOptions([...options, ""]);
+};
+
+const removeOption = (index) => {
+  if (options.length <= 2) {
+    return;
+  }
+
+  setOptions(
+    options.filter(
+      (_, optionIndex) =>
+        optionIndex !== index
+    )
+  );
+};
+
+const updateOption = (index, value) => {
+  const updatedOptions = [...options];
+  updatedOptions[index] = value;
+  setOptions(updatedOptions);
+};
+
+// -------------------------
+// Load Poll
+// -------------------------
+
+useEffect(() => {
+  if (!pollId) {
+    return;
+  }
+
+  setLoading(true);
+
+  fetch(`${API_URL}/polls/${pollId}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.poll) {
+        setPoll(data.poll);
+      } else {
+        setMessage("Poll not found");
+      }
+    })
+    .catch(() => {
+      setMessage("Failed to load poll");
+    })
+    .finally(() => {
       setLoading(false);
-    }
+    });
+
+  fetch(`${API_URL}/polls/${pollId}/results`)
+    .then((response) => response.json())
+    .then((data) => {
+      setResults(data.results || {});
+    })
+    .catch(() => {
+      console.log("Failed to load results");
+    });
+
+  const socket = new WebSocket(
+    `${WS_URL}/polls/${pollId}/ws`
+  );
+
+  socket.onopen = () => {
+    console.log("WebSocket connected");
   };
 
-  // -------------------------
-  // Add / Remove / Update Option
-  // -------------------------
+  socket.onmessage = (event) => {
+    const update = JSON.parse(event.data);
 
-  const addOption = () => {
-    setOptions([...options, ""]);
+    setResults((currentResults) => ({
+      ...currentResults,
+      [update.option]: update.count,
+    }));
   };
 
-  const removeOption = (index) => {
-    if (options.length <= 2) {
-      return;
-    }
+  socket.onerror = () => {
+    console.log("WebSocket error");
+  };
 
-    setOptions(
-      options.filter(
-        (_, optionIndex) =>
-          optionIndex !== index
-      )
+  socket.onclose = () => {
+    console.log("WebSocket disconnected");
+  };
+
+  return () => {
+    socket.close();
+  };
+}, [pollId]);
+
+// -------------------------
+// Vote
+// -------------------------
+
+const handleVote = async () => {
+  if (!selectedOption) {
+    setMessage("Please select an option");
+    return;
+  }
+
+  if (!poll.isActive) {
+    setMessage("Poll is closed");
+    return;
+  }
+
+  setVoting(true);
+  setMessage("");
+
+  try {
+    const response = await fetch(
+      `${API_URL}/polls/${pollId}/vote`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          option: selectedOption,
+        }),
+      }
     );
-  };
 
-  const updateOption = (index, value) => {
-    const updatedOptions = [...options];
-    updatedOptions[index] = value;
-    setOptions(updatedOptions);
-  };
+    const data = await response.json();
 
-  // -------------------------
-  // Load Poll
-  // -------------------------
-
-  useEffect(() => {
-    if (!pollId) {
-      return;
-    }
-
-    setLoading(true);
-
-    fetch(`${API_URL}/polls/${pollId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.poll) {
-          setPoll(data.poll);
-        } else {
-          setMessage("Poll not found");
-        }
-      })
-      .catch(() => {
-        setMessage("Failed to load poll");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    fetch(`${API_URL}/polls/${pollId}/results`)
-      .then((response) => response.json())
-      .then((data) => {
-        setResults(data.results || {});
-      })
-      .catch(() => {
-        console.log("Failed to load results");
-      });
-
-    const socket = new WebSocket(
-      `ws://localhost:8080/polls/${pollId}/ws`
-    );
-
-    socket.onopen = () => {
-      console.log("WebSocket connected");
-    };
-
-    socket.onmessage = (event) => {
-      const update = JSON.parse(event.data);
-
-      setResults((currentResults) => ({
-        ...currentResults,
-        [update.option]: update.count,
-      }));
-    };
-
-    socket.onerror = () => {
-      console.log("WebSocket error");
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, [pollId]);
-
-  // -------------------------
-  // Vote
-  // -------------------------
-
-  const handleVote = async () => {
-    if (!selectedOption) {
-      setMessage("Please select an option");
-      return;
-    }
-
-    if (!poll.isActive) {
-      setMessage("Poll is closed");
-      return;
-    }
-
-    setVoting(true);
-    setMessage("");
-
-    try {
-      const response = await fetch(
-        `${API_URL}/polls/${pollId}/vote`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            option: selectedOption,
-          }),
-        }
+    if (!response.ok) {
+      setMessage(
+        data.error || "Vote failed"
       );
+      return;
+    }
 
-      const data = await response.json();
+    setMessage(
+      "Vote submitted successfully!"
+    );
 
-      if (!response.ok) {
+    setSelectedOption("");
+  } catch (error) {
+    setMessage("Server connection failed");
+  } finally {
+    setVoting(false);
+  }
+};
+
+// -------------------------
+// Close Poll
+// -------------------------
+
+const handleClosePoll = async () => {
+  if (!token) {
+    setMessage("Please login first");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to close this poll?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setClosing(true);
+  setMessage("");
+
+  try {
+    const response = await fetch(
+      `${API_URL}/polls/${pollId}/close`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        setToken("");
         setMessage(
-          data.error || "Vote failed"
+          "Session expired. Please login again."
         );
+
         return;
       }
 
       setMessage(
-        "Vote submitted successfully!"
+        data.error || "Failed to close poll"
       );
 
-      setSelectedOption("");
-    } catch (error) {
-      setMessage("Server connection failed");
-    } finally {
-      setVoting(false);
-    }
-  };
-
-  // -------------------------
-  // Close Poll
-  // -------------------------
-
-  const handleClosePoll = async () => {
-    if (!token) {
-      setMessage("Please login first");
       return;
     }
 
-    const confirmed = window.confirm(
-      "Are you sure you want to close this poll?"
-    );
+    setPoll((currentPoll) => ({
+      ...currentPoll,
+      isActive: false,
+    }));
 
-    if (!confirmed) {
-      return;
-    }
-
-    setClosing(true);
-    setMessage("");
-
-    try {
-      const response = await fetch(
-        `${API_URL}/polls/${pollId}/close`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          setToken("");
-          setMessage(
-            "Session expired. Please login again."
-          );
-
-          return;
-        }
-
-        setMessage(
-          data.error || "Failed to close poll"
-        );
-
-        return;
-      }
-
-      setPoll((currentPoll) => ({
-        ...currentPoll,
-        isActive: false,
-      }));
-
-      setSelectedOption("");
-      setMessage("Poll closed successfully!");
-    } catch (error) {
-      setMessage("Server connection failed");
-    } finally {
-      setClosing(false);
-    }
-  };
-
-  // -------------------------
-  // Copy Poll Link
-  // -------------------------
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        window.location.href
-      );
-
-      setMessage("Poll link copied!");
-    } catch (error) {
-      setMessage("Failed to copy poll link");
-    }
-  };
-
-  // -------------------------
-  // Calculate total votes
-  // -------------------------
-
-  const totalVotes = poll
-    ? poll.options.reduce(
-      (total, option) =>
-        total + Number(results[option] || 0),
-      0
-    )
-    : 0;
-
-  // ==================================================
-  // HOME SCREEN
-  // ==================================================
-
-  if (!pollId) {
-    return (
-      <div className="app">
-        <div className="container">
-          <div className="card">
-
-            <h1 className="title">
-              Live Poll
-            </h1>
-
-            <p className="subtitle">
-              Create and share polls with
-              real-time results.
-            </p>
-
-            {!token ? (
-              <>
-                <h2 className="section-title">
-                  {isRegister
-                    ? "Create Account"
-                    : "Welcome Back"}
-                </h2>
-
-                {isRegister && (
-                  <input
-                    className="input"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(event) =>
-                      setName(event.target.value)
-                    }
-                  />
-                )}
-
-                <input
-                  className="input"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(event) =>
-                    setEmail(event.target.value)
-                  }
-                />
-
-                <input
-                  className="input"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
-                />
-
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={handleAuth}
-                  disabled={authLoading}
-                >
-                  {authLoading
-                    ? "Please wait..."
-                    : isRegister
-                      ? "Register"
-                      : "Login"}
-                </button>
-
-                <button
-                  className="auth-switch"
-                  type="button"
-                  onClick={() => {
-                    setIsRegister(!isRegister);
-                    setMessage("");
-                  }}
-                >
-                  {isRegister
-                    ? "Already have an account? Login"
-                    : "Don't have an account? Register"}
-                </button>
-
-                {message && (
-                  <p className="message">
-                    {message}
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="actions">
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
-                </div>
-
-                <hr />
-
-                <h2 className="section-title">
-                  Create a Poll
-                </h2>
-
-                <input
-                  className="input"
-                  type="text"
-                  placeholder="What do you want to ask?"
-                  value={question}
-                  onChange={(event) =>
-                    setQuestion(event.target.value)
-                  }
-                />
-
-                <h3>Options</h3>
-
-                {options.map((option, index) => (
-                  <div
-                    className="option-row"
-                    key={index}
-                  >
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder={`Option ${index + 1
-                        }`}
-                      value={option}
-                      onChange={(event) =>
-                        updateOption(
-                          index,
-                          event.target.value
-                        )
-                      }
-                    />
-
-                    {options.length > 2 && (
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() =>
-                          removeOption(index)
-                        }
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                <div className="actions">
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={addOption}
-                  >
-                    + Add Option
-                  </button>
-                </div>
-
-                <br />
-
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={handleCreatePoll}
-                  disabled={loading}
-                >
-                  {loading
-                    ? "Creating..."
-                    : "Create Poll"}
-                </button>
-
-                {message && (
-                  <p className="message">
-                    {message}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+    setSelectedOption("");
+    setMessage("Poll closed successfully!");
+  } catch (error) {
+    setMessage("Server connection failed");
+  } finally {
+    setClosing(false);
   }
+};
 
-  // ==================================================
-  // LOADING
-  // ==================================================
+// -------------------------
+// Copy Poll Link
+// -------------------------
 
-  if (loading || !poll) {
-    return (
-      <div className="app">
-        <div className="container">
-          <div className="card">
-            <h2>
-              {message || "Loading poll..."}
-            </h2>
-          </div>
-        </div>
-      </div>
+const handleCopyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(
+      window.location.href
     );
+
+    setMessage("Poll link copied!");
+  } catch (error) {
+    setMessage("Failed to copy poll link");
   }
+};
 
-  // -------------------------
-  // Owner check
-  // -------------------------
+// -------------------------
+// Calculate total votes
+// -------------------------
 
-  const isOwner =
-    currentUserId &&
-    currentUserId === poll.createdBy;
+const totalVotes = poll
+  ? poll.options.reduce(
+    (total, option) =>
+      total + Number(results[option] || 0),
+    0
+  )
+  : 0;
 
-  // ==================================================
-  // POLL SCREEN
-  // ==================================================
+// ==================================================
+// HOME SCREEN
+// ==================================================
 
+if (!pollId) {
   return (
     <div className="app">
       <div className="container">
@@ -723,157 +512,372 @@ function App() {
           </h1>
 
           <p className="subtitle">
-            Real-time voting and results
+            Create and share polls with
+            real-time results.
           </p>
 
-          <div className="actions">
-            <span
-              className={
-                poll.isActive
-                  ? "status"
-                  : "status closed"
-              }
-            >
-              {poll.isActive
-                ? "Live"
-                : "Closed"}
-            </span>
-          </div>
+          {!token ? (
+            <>
+              <h2 className="section-title">
+                {isRegister
+                  ? "Create Account"
+                  : "Welcome Back"}
+              </h2>
 
-          <h2 className="section-title">
-            {poll.question}
-          </h2>
+              {isRegister && (
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(event) =>
+                    setName(event.target.value)
+                  }
+                />
+              )}
 
-          {poll.options.map((option) => (
-            <label
-              className="poll-option"
-              key={option}
-            >
               <input
-                type="radio"
-                name="poll-option"
-                value={option}
-                checked={
-                  selectedOption === option
-                }
-                disabled={!poll.isActive}
+                className="input"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
                 onChange={(event) =>
-                  setSelectedOption(
-                    event.target.value
-                  )
+                  setEmail(event.target.value)
                 }
               />
 
-              {option}
-            </label>
-          ))}
-
-          <button
-            className="primary-button"
-            type="button"
-            onClick={handleVote}
-            disabled={
-              voting || !poll.isActive
-            }
-          >
-            {voting
-              ? "Submitting..."
-              : poll.isActive
-                ? "Submit Vote"
-                : "Voting Closed"}
-          </button>
-
-          {message && (
-            <p className="message">
-              {message}
-            </p>
-          )}
-
-          <hr />
-
-          <h2 className="section-title">
-            Live Results
-          </h2>
-
-          <p className="subtitle">
-            Total votes: {totalVotes}
-          </p>
-
-          {poll.options.map((option) => {
-            const count = Number(
-              results[option] || 0
-            );
-
-            const percentage =
-              totalVotes === 0
-                ? 0
-                : Math.round(
-                  (count / totalVotes) * 100
-                );
-
-            return (
-              <div
-                className="result-row"
-                key={option}
-              >
-                <div className="result-label">
-                  <span>{option}</span>
-                  <span>
-                    {count} ({percentage}%)
-                  </span>
-                </div>
-
-                <div className="result-bar">
-                  <div
-                    className="result-fill"
-                    style={{
-                      width: `${percentage}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-
-          <hr />
-
-          {isOwner && poll.isActive && (
-            <>
-              <h3>
-                Poll Management
-              </h3>
+              <input
+                className="input"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
+              />
 
               <button
-                className="danger-button"
+                className="primary-button"
                 type="button"
-                onClick={handleClosePoll}
-                disabled={closing}
+                onClick={handleAuth}
+                disabled={authLoading}
               >
-                {closing
-                  ? "Closing..."
-                  : "Close Poll"}
+                {authLoading
+                  ? "Please wait..."
+                  : isRegister
+                    ? "Register"
+                    : "Login"}
               </button>
 
+              <button
+                className="auth-switch"
+                type="button"
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setMessage("");
+                }}
+              >
+                {isRegister
+                  ? "Already have an account? Login"
+                  : "Don't have an account? Register"}
+              </button>
+
+              {message && (
+                <p className="message">
+                  {message}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+
               <hr />
+
+              <h2 className="section-title">
+                Create a Poll
+              </h2>
+
+              <input
+                className="input"
+                type="text"
+                placeholder="What do you want to ask?"
+                value={question}
+                onChange={(event) =>
+                  setQuestion(event.target.value)
+                }
+              />
+
+              <h3>Options</h3>
+
+              {options.map((option, index) => (
+                <div
+                  className="option-row"
+                  key={index}
+                >
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder={`Option ${index + 1}`}
+                    value={option}
+                    onChange={(event) =>
+                      updateOption(
+                        index,
+                        event.target.value
+                      )
+                    }
+                  />
+
+                  {options.length > 2 && (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() =>
+                        removeOption(index)
+                      }
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <div className="actions">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={addOption}
+                >
+                  + Add Option
+                </button>
+              </div>
+
+              <br />
+
+              <button
+                className="primary-button"
+                type="button"
+                onClick={handleCreatePoll}
+                disabled={loading}
+              >
+                {loading
+                  ? "Creating..."
+                  : "Create Poll"}
+              </button>
+
+              {message && (
+                <p className="message">
+                  {message}
+                </p>
+              )}
             </>
           )}
-
-          <h3>
-            Share this poll
-          </h3>
-
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={handleCopyLink}
-          >
-            Copy Poll Link
-          </button>
-
         </div>
       </div>
     </div>
   );
 }
 
+// ==================================================
+// LOADING
+// ==================================================
+
+if (loading || !poll) {
+  return (
+    <div className="app">
+      <div className="container">
+        <div className="card">
+          <h2>
+            {message || "Loading poll..."}
+          </h2>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------
+// Owner check
+// -------------------------
+
+const isOwner =
+  currentUserId &&
+  currentUserId === poll.createdBy;
+
+// ==================================================
+// POLL SCREEN
+// ==================================================
+
+return (
+  <div className="app">
+    <div className="container">
+      <div className="card">
+
+        <h1 className="title">
+          Live Poll
+        </h1>
+
+        <p className="subtitle">
+          Real-time voting and results
+        </p>
+
+        <div className="actions">
+          <span
+            className={
+              poll.isActive
+                ? "status"
+                : "status closed"
+            }
+          >
+            {poll.isActive
+              ? "Live"
+              : "Closed"}
+          </span>
+        </div>
+
+        <h2 className="section-title">
+          {poll.question}
+        </h2>
+
+        {poll.options.map((option) => (
+          <label
+            className="poll-option"
+            key={option}
+          >
+            <input
+              type="radio"
+              name="poll-option"
+              value={option}
+              checked={
+                selectedOption === option
+              }
+              disabled={!poll.isActive}
+              onChange={(event) =>
+                setSelectedOption(
+                  event.target.value
+                )
+              }
+            />
+
+            {option}
+          </label>
+        ))}
+
+        <button
+          className="primary-button"
+          type="button"
+          onClick={handleVote}
+          disabled={
+            voting || !poll.isActive
+          }
+        >
+          {voting
+            ? "Submitting..."
+            : poll.isActive
+              ? "Submit Vote"
+              : "Voting Closed"}
+        </button>
+
+        {message && (
+          <p className="message">
+            {message}
+          </p>
+        )}
+
+        <hr />
+
+        <h2 className="section-title">
+          Live Results
+        </h2>
+
+        <p className="subtitle">
+          Total votes: {totalVotes}
+        </p>
+
+        {poll.options.map((option) => {
+          const count = Number(
+            results[option] || 0
+          );
+
+          const percentage =
+            totalVotes === 0
+              ? 0
+              : Math.round(
+                (count / totalVotes) * 100
+              );
+
+          return (
+            <div
+              className="result-row"
+              key={option}
+            >
+              <div className="result-label">
+                <span>{option}</span>
+                <span>
+                  {count} ({percentage}%)
+                </span>
+              </div>
+
+              <div className="result-bar">
+                <div
+                  className="result-fill"
+                  style={{
+                    width: `${percentage}%`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+
+        <hr />
+
+        {isOwner && poll.isActive && (
+          <>
+            <h3>
+              Poll Management
+            </h3>
+
+            <button
+              className="danger-button"
+              type="button"
+              onClick={handleClosePoll}
+              disabled={closing}
+            >
+              {closing
+                ? "Closing..."
+                : "Close Poll"}
+            </button>
+
+            <hr />
+          </>
+        )}
+
+        <h3>
+          Share this poll
+        </h3>
+
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={handleCopyLink}
+        >
+          Copy Poll Link
+        </button>
+
+      </div>
+    </div>
+  </div>
+);
+}
+
 export default App;
+
