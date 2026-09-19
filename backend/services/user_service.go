@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"time"
 
@@ -10,9 +11,8 @@ import (
 	"live-polling-backend/repositories"
 
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
-
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -119,6 +119,14 @@ func (s *UserService) Login(
 		return "", nil, errors.New("invalid email or password")
 	}
 
+	// JWT secret from environment variable.
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	// Local development fallback.
+	if jwtSecret == "" {
+		jwtSecret = "live-polling-secret-key"
+	}
+
 	// Create JWT token.
 	claims := jwt.MapClaims{
 		"userId": user.ID.Hex(),
@@ -132,7 +140,7 @@ func (s *UserService) Login(
 	)
 
 	tokenString, err := token.SignedString(
-		[]byte("live-polling-secret-key"),
+		[]byte(jwtSecret),
 	)
 
 	if err != nil {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -188,7 +189,12 @@ func main() {
 	// Start server
 	// -------------------------
 
-	err = router.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	err = router.Run(":" + port)
 	if err != nil {
 		log.Fatal("Server failed to start:", err)
 	}

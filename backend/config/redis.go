@@ -3,19 +3,30 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/redis/go-redis/v9"
 )
 
 func ConnectRedis() (*redis.Client, error) {
 
-	client := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
+	redisURL := os.Getenv("REDIS_URL")
+
+	// Local development fallback
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
+	}
+
+	options, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return nil, err
+	}
+
+	client := redis.NewClient(options)
 
 	ctx := context.Background()
 
-	err := client.Ping(ctx).Err()
+	err = client.Ping(ctx).Err()
 	if err != nil {
 		return nil, err
 	}

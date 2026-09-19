@@ -2,13 +2,12 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var jwtSecret = []byte("live-polling-secret-key")
 
 func AuthMiddleware() gin.HandlerFunc {
 
@@ -36,6 +35,14 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := parts[1]
 
+		// JWT secret from environment variable.
+		jwtSecret := os.Getenv("JWT_SECRET")
+
+		// Local development fallback.
+		if jwtSecret == "" {
+			jwtSecret = "live-polling-secret-key"
+		}
+
 		token, err := jwt.Parse(
 			tokenString,
 			func(token *jwt.Token) (interface{}, error) {
@@ -44,7 +51,7 @@ func AuthMiddleware() gin.HandlerFunc {
 					return nil, jwt.ErrTokenSignatureInvalid
 				}
 
-				return jwtSecret, nil
+				return []byte(jwtSecret), nil
 			},
 		)
 

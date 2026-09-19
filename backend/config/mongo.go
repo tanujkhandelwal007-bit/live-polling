@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -11,7 +12,12 @@ import (
 
 func ConnectMongoDB() (*mongo.Client, error) {
 
-	uri := "mongodb://localhost:27017"
+	uri := os.Getenv("MONGO_URI")
+
+	// Local development fallback
+	if uri == "" {
+		uri = "mongodb://localhost:27017"
+	}
 
 	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
