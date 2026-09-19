@@ -16,19 +16,16 @@ import (
 
 func main() {
 
-	// Connect to MongoDB
 	mongoClient, err := config.ConnectMongoDB()
 	if err != nil {
 		log.Fatal("MongoDB connection failed:", err)
 	}
 
-	// Connect to Redis
 	redisClient, err := config.ConnectRedis()
 	if err != nil {
 		log.Fatal("Redis connection failed:", err)
 	}
 
-	// Get MongoDB collections
 	pollCollection := config.GetPollCollection(mongoClient)
 
 	voteCollection := mongoClient.
@@ -38,10 +35,6 @@ func main() {
 	userCollection := mongoClient.
 		Database("live_polling").
 		Collection("users")
-
-	// -------------------------
-	// Poll dependencies
-	// -------------------------
 
 	pollRepository := repositories.NewPollRepository(
 		pollCollection,
@@ -55,17 +48,9 @@ func main() {
 		pollService,
 	)
 
-	// -------------------------
-	// Redis service
-	// -------------------------
-
 	redisService := services.NewRedisService(
 		redisClient,
 	)
-
-	// -------------------------
-	// Vote dependencies
-	// -------------------------
 
 	voteRepository := repositories.NewVoteRepository(
 		voteCollection,
@@ -81,41 +66,21 @@ func main() {
 		voteService,
 	)
 
-	// -------------------------
-	// Result handler
-	// -------------------------
-
 	resultHandler := handlers.NewResultHandler(
 		redisService,
 	)
 
-	// -------------------------
-	// WebSocket service
-	// -------------------------
-
 	webSocketService := services.NewWebSocketService()
-
-	// -------------------------
-	// Realtime service
-	// -------------------------
 
 	realtimeService := services.NewRealtimeService(
 		redisClient,
 		webSocketService,
 	)
 
-	// -------------------------
-	// WebSocket handler
-	// -------------------------
-
 	webSocketHandler := handlers.NewWebSocketHandler(
 		webSocketService,
 		realtimeService,
 	)
-
-	// -------------------------
-	// User dependencies
-	// -------------------------
 
 	userRepository := repositories.NewUserRepository(
 		userCollection,
@@ -129,36 +94,44 @@ func main() {
 		userService,
 	)
 
-	// -------------------------
-	// Gin router
-	// -------------------------
-
 	router := gin.Default()
 
-	// -------------------------
-	// CORS
-	// -------------------------
+	frontendURL := os.Getenv("FRONTEND_URL")
+
+	allowOrigins := []string{
+		"http://localhost:5173",
+	}
+
+	if frontendURL != "" {
+		allowOrigins = append(
+			allowOrigins,
+			frontendURL,
+		)
+	}
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowOrigins: allowOrigins,
+		AllowMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+			"OPTIONS",
+		},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Accept",
+			"Authorization",
+		},
 		AllowCredentials: true,
 	}))
-
-	// -------------------------
-	// Test endpoint
-	// -------------------------
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Live Polling Backend is running!",
 		})
 	})
-
-	// -------------------------
-	// Register routes
-	// -------------------------
 
 	routes.RegisterPollRoutes(
 		router,
@@ -185,16 +158,14 @@ func main() {
 		authHandler,
 	)
 
-	// -------------------------
-	// Start server
-	// -------------------------
-
 	port := os.Getenv("PORT")
+
 	if port == "" {
 		port = "8080"
 	}
 
 	err = router.Run(":" + port)
+
 	if err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
