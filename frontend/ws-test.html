@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+
+<body>
+
+    <h1>Live Poll WebSocket Test</h1>
+
+    <p id="status">Connecting...</p>
+
+    <div id="messages"></div>
+
+    <script>
+
+        const pollId = "6aad9ed59ffee440dd2c8303";
+
+        const socket = new WebSocket(
+            `ws://localhost:8080/polls/${pollId}/ws`
+        );
+
+        socket.onopen = function () {
+            document.getElementById("status").innerText =
+                "WebSocket Connected!";
+        };
+
+        socket.onmessage = function (event) {
+
+            const message = document.createElement("p");
+
+            message.innerText =
+                "Realtime Update: " + event.data;
+
+            document.getElementById("messages")
+                .appendChild(message);
+        };
+
+        socket.onerror = function () {
+
+            document.getElementById("status").innerText =
+                "WebSocket Error";
+        };
+
+        socket.onclose = function () {
+
+            document.getElementById("status").innerText =
+                "WebSocket Disconnected";
+        };
+
+    </script>
+
+</body>
+</html>

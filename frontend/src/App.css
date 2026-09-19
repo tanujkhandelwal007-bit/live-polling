@@ -1,0 +1,645 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+/* =========================================
+   TOKENS
+========================================= */
+
+:root {
+  --bg: #001e2b;
+  --text: #eafff5;
+  --muted: #9fbfb3;
+  --faint: #5f857a;
+
+  --glass: rgba(193, 245, 221, 0.05);
+  --glass-hover: rgba(193, 245, 221, 0.09);
+  --edge: rgba(193, 245, 221, 0.14);
+  --edge-strong: rgba(193, 245, 221, 0.32);
+
+  --green: #00ed64;
+  --green-soft: #71f6ba;
+  --mint: #c1f5dd;
+  --forest: #00684a;
+  --on-green: #001e2b;
+  --grad: linear-gradient(135deg, #00ed64 0%, #3ff59a 55%, #71f6ba 100%);
+
+  --ok: #00ed64;
+  --bad: #ff6b7a;
+
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+
+  color: var(--text);
+
+  background:
+    radial-gradient(620px 440px at 10% 6%, rgba(0, 237, 100, 0.22), transparent 70%),
+    radial-gradient(600px 480px at 95% 32%, rgba(0, 104, 74, 0.55), transparent 70%),
+    radial-gradient(640px 480px at 28% 108%, rgba(113, 246, 186, 0.14), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(0, 237, 100, 0.35);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+/* =========================================
+   APP + CARD
+========================================= */
+
+.app {
+  min-height: 100vh;
+  padding: 56px 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card {
+  padding: 44px;
+
+  background: linear-gradient(160deg,
+      rgba(193, 245, 221, 0.09) 0%,
+      rgba(193, 245, 221, 0.03) 60%);
+
+  border: 1px solid var(--edge);
+  border-radius: 28px;
+
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  backdrop-filter: blur(28px) saturate(140%);
+
+  box-shadow:
+    0 1px 0 rgba(193, 245, 221, 0.2) inset,
+    0 40px 100px rgba(0, 8, 12, 0.65);
+
+  animation: cardIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+/* =========================================
+   TYPOGRAPHY
+========================================= */
+
+.title,
+.section-title,
+h1,
+h2,
+h3 {
+  font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+  color: var(--text);
+}
+
+.title {
+  margin: 0;
+
+  font-size: clamp(42px, 8vw, 72px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+
+  background: linear-gradient(180deg, #ffffff 30%, #71f6ba 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin: 16px auto 36px;
+  max-width: 48ch;
+
+  text-align: center;
+
+  color: var(--mint);
+
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.section-title {
+  margin: 0 0 22px;
+
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+h3 {
+  margin: 28px 0 12px;
+
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+hr {
+  margin: 34px 0;
+
+  border: 0;
+  height: 1px;
+
+  background: linear-gradient(90deg,
+      transparent,
+      var(--edge-strong),
+      transparent);
+}
+
+/* =========================================
+   INPUTS
+========================================= */
+
+.input {
+  width: 100%;
+
+  padding: 15px 18px;
+  margin-bottom: 12px;
+
+  background: rgba(0, 20, 29, 0.6);
+
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+
+  color: var(--text);
+  font-weight: 500;
+
+  outline: none;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.input::placeholder {
+  color: var(--faint);
+}
+
+.input:hover {
+  border-color: var(--edge-strong);
+}
+
+.input:focus {
+  border-color: var(--green);
+  background: rgba(0, 20, 29, 0.85);
+
+  box-shadow: 0 0 0 4px rgba(0, 237, 100, 0.18);
+}
+
+.option-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.option-row .input {
+  margin-bottom: 0;
+}
+
+/* =========================================
+   PRIMARY BUTTON
+========================================= */
+
+.primary-button {
+  position: relative;
+
+  width: 100%;
+  padding: 16px 22px;
+
+  border: 0;
+  border-radius: var(--radius);
+
+  background: var(--grad);
+  color: var(--on-green);
+
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 12px 32px rgba(0, 237, 100, 0.28);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 18px 42px rgba(0, 237, 100, 0.42);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* =========================================
+   SECONDARY BUTTON
+========================================= */
+
+.secondary-button {
+  padding: 11px 18px;
+
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+
+  background: var(--glass);
+  color: var(--text);
+
+  font-weight: 600;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--glass-hover);
+  border-color: var(--edge-strong);
+
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   DANGER BUTTON
+========================================= */
+
+.danger-button {
+  padding: 11px 18px;
+
+  border: 1px solid rgba(255, 107, 122, 0.38);
+  border-radius: 12px;
+
+  background: rgba(255, 107, 122, 0.1);
+  color: #ffb3bb;
+
+  font-weight: 600;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  background: rgba(255, 107, 122, 0.2);
+  border-color: rgba(255, 107, 122, 0.6);
+}
+
+/* =========================================
+   AUTH SWITCH
+========================================= */
+
+.auth-switch {
+  display: block;
+
+  margin: 22px auto 0;
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: var(--green-soft);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: color 0.15s ease;
+}
+
+.auth-switch:hover {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* =========================================
+   MESSAGE
+========================================= */
+
+.message {
+  margin-top: 20px;
+
+  padding: 14px 16px;
+
+  border: 1px solid rgba(0, 237, 100, 0.28);
+  border-radius: 14px;
+
+  background: rgba(0, 237, 100, 0.08);
+  color: var(--mint);
+
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================================
+   LIVE STATUS
+========================================= */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 7px 14px 7px 12px;
+
+  border: 1px solid rgba(0, 237, 100, 0.38);
+  border-radius: 999px;
+
+  background: rgba(0, 237, 100, 0.12);
+  color: var(--green-soft);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status::before {
+  content: "";
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+  background: var(--ok);
+
+  box-shadow: 0 0 12px var(--ok);
+
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+
+.status.closed {
+  border-color: rgba(255, 107, 122, 0.38);
+  background: rgba(255, 107, 122, 0.12);
+  color: #ffa3ad;
+}
+
+.status.closed::before {
+  background: var(--bad);
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes livePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+/* =========================================
+   POLL OPTIONS
+========================================= */
+
+.poll-option {
+  display: flex;
+  align-items: center;
+
+  min-height: 64px;
+
+  padding: 16px 20px;
+  margin-bottom: 10px;
+
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+
+  background: var(--glass);
+  color: var(--text);
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.poll-option:hover {
+  background: var(--glass-hover);
+  border-color: var(--edge-strong);
+
+  transform: translateY(-2px);
+}
+
+.poll-option:has(input:checked) {
+  background: rgba(0, 237, 100, 0.1);
+  border-color: var(--green);
+
+  box-shadow:
+    0 0 0 3px rgba(0, 237, 100, 0.14),
+    0 10px 30px rgba(0, 237, 100, 0.16);
+}
+
+.poll-option input {
+  appearance: none;
+  -webkit-appearance: none;
+
+  flex: none;
+
+  width: 22px;
+  height: 22px;
+
+  margin: 0 15px 0 0;
+
+  border: 2px solid var(--edge-strong);
+  border-radius: 7px;
+
+  background-color: transparent;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.poll-option input[type="radio"] {
+  border-radius: 50%;
+}
+
+.poll-option input:checked {
+  border-color: transparent;
+}
+
+.poll-option input[type="radio"]:checked {
+  background:
+    radial-gradient(circle, #001e2b 0 32%, transparent 36%),
+    var(--grad);
+}
+
+.poll-option input[type="checkbox"]:checked {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23001e2b' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 75% no-repeat,
+    var(--grad);
+}
+
+/* =========================================
+   RESULTS
+========================================= */
+
+.result-row {
+  margin-bottom: 24px;
+}
+
+.result-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+
+  margin-bottom: 10px;
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.result-label span:first-child {
+  color: var(--text);
+}
+
+.result-label span:last-child {
+  color: var(--green-soft);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-bar {
+  width: 100%;
+  height: 10px;
+
+  background: rgba(193, 245, 221, 0.08);
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+.result-fill {
+  height: 100%;
+
+  background: var(--grad);
+  border-radius: 999px;
+
+  box-shadow: 0 0 16px rgba(0, 237, 100, 0.5);
+
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .app {
+    padding: 22px 12px 40px;
+  }
+
+  .card {
+    padding: 28px 20px;
+
+    border-radius: 22px;
+  }
+
+  .title {
+    font-size: 46px;
+  }
+
+  .section-title {
+    font-size: 23px;
+  }
+
+  .option-row {
+    flex-direction: column;
+  }
+
+  .option-row .secondary-button {
+    width: 100%;
+  }
+
+  .poll-option {
+    min-height: 58px;
+  }
+}
+
+/* =========================================
+   REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
